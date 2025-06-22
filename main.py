@@ -3,13 +3,14 @@ import numpy as np
 import cv2
 import pandas as pd
 from PIL import Image
-from segmentation_metod import OtsuSegmentation, OtsuWithFiltersSegmentation, MeanSegmentation, UNetSegmentation
+from segmentation_metod import *
 from unet_model import load_model
 # st.set_page_config(layout="wide")
 image = None
 with st.sidebar:
     image_path = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
     methods = {
+    "Manual Thresholding": ManualThresholdSegmentation(),
     "Otsu": OtsuSegmentation(),
     "Otsu with Filters": OtsuWithFiltersSegmentation(),
     "Mean": MeanSegmentation(),
@@ -31,6 +32,4 @@ if selected:
         image = np.array(image)
         for method_name in selected:
             method = methods[method_name]
-            st.subheader(f"Segmentation using {method_name.lower()}")
-            segmented_image = method.segment(image)
-            st.image(segmented_image, caption=method, use_column_width=True)
+            method.show(image)

@@ -9,12 +9,19 @@ class SegmentationMethod:
 
     def segment(self, data):
         raise NotImplementedError("This method should be overridden by subclasses")
+    
+    def show(self, data):
+        st.subheader(f"Segmentation using {self.name.lower()}")
+        segmented_data = self.segment(data)
+        st.image(segmented_data, caption=self.name, use_column_width=True)
 
     def __str__(self):
         return f"{self.name}"
 
     def __repr__(self):
         return self.__str__()
+
+
 
 class OtsuSegmentation(SegmentationMethod):
     def __init__(self):
@@ -33,6 +40,15 @@ class OtsuWithFiltersSegmentation(SegmentationMethod):
     def __init__(self):
         super().__init__("Otsu with Filters")
 
+    def show(self, data):
+        st.subheader(f"Segmentation using {self.name.lower()}")
+
+        self.sigma = st.slider("Sigma for Gaussian Blur", 0.0, 10.0, 1.0)
+        self.size = st.slider("Size for Morphological Operations", 0, 100, 40)
+        
+        segmented_data = self.segment(data)
+        st.image(segmented_data, caption=self.name, use_column_width=True)
+
     def segment(self, data):
         if len(data.shape) == 3:  # Check if the image is colored
             gray = cv2.cvtColor(data, cv2.COLOR_BGR2GRAY)
@@ -40,11 +56,16 @@ class OtsuWithFiltersSegmentation(SegmentationMethod):
             gray = data
 
         # Apply Gaussian blur to reduce noise
-        blurred = cv2.GaussianBlur(gray, (1, 1), 0)
-        _, segmented_image = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        opened_image = cv2.morphologyEx(segmented_image, cv2.MORPH_OPEN, np.ones((40, 40), np.uint8))
-        closed_image = cv2.morphologyEx(opened_image, cv2.MORPH_CLOSE, np.ones((40, 40), np.uint8))
-        return closed_image
+        if self.sigma != 0:
+            gray = cv2.GaussianBlur(gray, (0, 0), sigmaX=self.sigma, sigmaY=self.sigma)
+        _, segmented_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+        
+        if self.size != 0:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.size, self.size))
+            segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_OPEN, kernel)
+            segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_CLOSE, kernel)
+        return segmented_image
 
 class MeanSegmentation(SegmentationMethod):
     def __init__(self):
@@ -76,4 +97,3 @@ class UNetSegmentation(SegmentationMethod):
         prediction = (prediction > 0.5).astype(np.uint8) * 255  # Binarize the output
         prediction = cv2.resize(prediction.squeeze(), (original_size[1], original_size[0]), interpolation=cv2.INTER_NEAREST)
         return prediction
-    
