@@ -1,0 +1,4 @@
+data/
+unet_model.h5
+*.pyc
+__pycache__/
