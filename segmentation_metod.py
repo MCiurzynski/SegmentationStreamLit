@@ -22,6 +22,25 @@ class SegmentationMethod:
         return self.__str__()
 
 
+class ManualThresholdSegmentation(SegmentationMethod):
+    def __init__(self):
+        super().__init__("Manual Threshold")
+
+    def show(self, data):
+        st.subheader(f"Segmentation using {self.name.lower()}")
+        self.threshold = st.slider("Threshold value", 0, 255, 127)
+        
+        segmented_data = self.segment(data)
+        st.image(segmented_data, caption=self.name, use_column_width=True)
+
+    def segment(self, data):
+        if len(data.shape) == 3:  # Check if the image is colored
+            gray = cv2.cvtColor(data, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = data
+
+        _, segmented_image = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY_INV)
+        return segmented_image
 
 class OtsuSegmentation(SegmentationMethod):
     def __init__(self):
