@@ -3,7 +3,8 @@ import numpy as np
 import cv2
 import pandas as pd
 from PIL import Image
-from segmentation_metod import OtsuSegmentation, OtsuWithFiltersSegmentation, MeanSegmentation
+from segmentation_metod import OtsuSegmentation, OtsuWithFiltersSegmentation, MeanSegmentation, UNetSegmentation
+from unet_model import load_model
 # st.set_page_config(layout="wide")
 image = None
 with st.sidebar:
@@ -11,9 +12,10 @@ with st.sidebar:
     methods = {
     "Otsu": OtsuSegmentation(),
     "Otsu with Filters": OtsuWithFiltersSegmentation(),
-    "Mean": MeanSegmentation()
+    "Mean": MeanSegmentation(),
+    "U-Net": UNetSegmentation(load_model("unet_model.h5"))
     }
-    selected = st.multiselect("Metody segmentacji", methods)
+    selected = st.multiselect("Select segmentation methods", methods)
 
     if image_path is not None:
         # Read the image
@@ -29,8 +31,6 @@ if selected:
         image = np.array(image)
         for method_name in selected:
             method = methods[method_name]
-            st.subheader(f"Segmentacja metodą: {method}")
+            st.subheader(f"Segmentation using {method_name.lower()}")
             segmented_image = method.segment(image)
-            st.image(segmented_image, caption=f"Segmentacja przy pomocy {method}", use_column_width=True)
-    else:
-        st.error("Please upload an image to segment.")
+            st.image(segmented_image, caption=method, use_column_width=True)
