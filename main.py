@@ -14,7 +14,8 @@ with st.sidebar:
     "Otsu": OtsuSegmentation(),
     "Otsu with Filters": OtsuWithFiltersSegmentation(),
     "Mean": MeanSegmentation(),
-    "U-Net": UNetSegmentation(load_model("unet_model.h5"))
+    "U-Net": UNetSegmentation(load_model("unet_model.h5")),
+    "U-Net with Filters": UNetWithFiltersSegmentation(load_model("unet_model.h5")),
     }
     selected = st.multiselect("Select segmentation methods", methods)
 

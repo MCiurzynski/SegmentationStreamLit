@@ -62,8 +62,8 @@ class OtsuWithFiltersSegmentation(SegmentationMethod):
     def show(self, data):
         st.subheader(f"Segmentation using {self.name.lower()}")
 
-        self.sigma = st.slider("Sigma for Gaussian Blur", 0.0, 10.0, 1.0)
-        self.size = st.slider("Size for Morphological Operations", 0, 100, 40)
+        self.sigma = st.slider("Sigma for Gaussian Blur", 0.0, 10.0, 1.0, key="sigma_blur_otsu")
+        self.size = st.slider("Size for Morphological Operations", 0, 100, 40, key="size_morph_otsu")
         
         segmented_data = self.segment(data)
         st.image(segmented_data, caption=self.name, use_column_width=True)
@@ -115,4 +115,31 @@ class UNetSegmentation(SegmentationMethod):
         prediction = np.squeeze(prediction)  # Remove batch dimension
         prediction = (prediction > 0.5).astype(np.uint8) * 255  # Binarize the output
         prediction = cv2.resize(prediction.squeeze(), (original_size[1], original_size[0]), interpolation=cv2.INTER_NEAREST)
+        return prediction
+
+class UNetWithFiltersSegmentation(UNetSegmentation):
+    def __init__(self, model):
+        super().__init__(model)
+
+    def show(self, data):
+        st.subheader(f"Segmentation using {self.name.lower()}")
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            self.sigma = st.slider("Sigma for Gaussian Blur", 0.0, 10.0, 1.0, key="sigma_blur_unet")
+            self.size = st.slider("Size for Morphological Operations", 0, 100, 40, key="size_morph_unet")
+        
+        segmented_data = self.segment(data)
+        with col2:
+            st.image(segmented_data, caption=self.name, use_column_width=True) 
+
+    def segment(self, data):
+        if self.sigma != 0:
+            data = cv2.GaussianBlur(data, (0, 0), sigmaX=self.sigma, sigmaY=self.sigma)
+        prediction = super().segment(data)
+        
+        if self.size != 0:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.size, self.size))
+            prediction = cv2.morphologyEx(prediction, cv2.MORPH_OPEN, kernel)
+            prediction = cv2.morphologyEx(prediction, cv2.MORPH_CLOSE, kernel)
+        
         return prediction
